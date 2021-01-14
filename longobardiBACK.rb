@@ -12,7 +12,7 @@ $fcm = FCM.new('AAAA0ID3FSw:APA91bHveLJLI9jU_M3GQAN1ej-H8DjOFtxbFwGJ9kqWD2Ct8m1K
 $registration_ids = ['e07mwn9JTCqIhKCkDFOr9g:APA91bEAwliA2uFbIP9pOFh8XlZ96R6S_jyQL1SapZK3SaxOhgQ6r2WGfuRoFRQRZhAmGbBdikc5vYChWwtpeMd9hIYCb3VsIjQxAYXsq1CLpUM-08eeHEsCX_lRNn_wVRe47F2shjJe', 'fOhLXUDkT9q5Sy_zA334I3:APA91bFfS8arvQgx4Po0DPIx26_ayYE_q8_4y37LLrj88-VgrFFIEce9fHmUNMozhSnSACWrE7sWvqCsWtMeRprKlfSLOQaWHgHht4UJ6BLV-L-YKkuXFw-PeANifxXB_CbFd8Cz3cBY']
 
 def checkHashKey(hashkey, date, time, battery)
-    return (Digest::SHA256.hexdigest KEY + date + time + battery).downcase == hashkey.downcase ? true : false
+    return (Digest::SHA1.hexdigest KEY + date + time + battery).downcase == hashkey.downcase ? true : false
 end
 
 def sendPushNotification() 

@@ -47,6 +47,7 @@ class LongobardiBACK < Sinatra::Base
             mail.battery = battery
             response['status'] = 'ok'
             response['message'] = 'New mail registered'
+            response['mail'] = JSON.parse(ActiveSupport::JSON.encode(mail));
             sendPushNotification()
         else
             response['status'] = 'ko'
@@ -55,19 +56,4 @@ class LongobardiBACK < Sinatra::Base
         content_type :json
         response.to_json
     end
-    #Called by longobardicAPP to check whether a new mail is available
-    # get '/checkMailbox' do
-    #     response = {}
-    #     if (newMail) 
-    #         response['status'] = 'ok'
-    #         response['available_inbox'] = true
-    #         response['mail'] = JSON.parse(ActiveSupport::JSON.encode(mail)) #Hashed object converted in JSON
-    #         newMail = false
-    #     else 
-    #         response['status'] = 'ko'
-    #         response['available_inbox'] = false
-    #     end
-    #     content_type :json
-    #     response.to_json
-    # end
 end

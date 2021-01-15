@@ -15,15 +15,19 @@ def checkHashKey(hashkey, date, time, battery)
     return (Digest::SHA1.hexdigest KEY + date + time + battery).downcase == hashkey.downcase ? true : false
 end
 
-def sendPushNotification() 
+def sendPushNotification(newMail) 
     options = {
+        "priority": "high",
         "notification": {
             "title": "De pusc notifichescio",
             "body": "Va che bella notifica che ti ho preso"
+        },
+        "data": {
+            "mail": newMail
         }
     }
     response = $fcm.send($registration_ids, options)
-    puts('Service response: ', response) #Leggere json response e verificare che valore di body -> success sia pari a 1 altrimenti errore
+    puts('Service response: ', response)
 end
 
 class Mail
@@ -31,7 +35,6 @@ class Mail
 end
 
 class LongobardiBACK < Sinatra::Base
-    #newMail = false
     mail = Mail.new()
     #Called by ESP8266 when the sensor is triggered
     post '/newMail' do
@@ -41,14 +44,13 @@ class LongobardiBACK < Sinatra::Base
         time = params['time']
         battery = params['battery']
         if (checkHashKey(hashkey, date, time, battery)) #The hashkey is checked to avoid data manipulation from unknown sources
-            #newMail = true
             mail.date = date
             mail.time = time
             mail.battery = battery
             response['status'] = 'ok'
             response['message'] = 'New mail registered'
-            response['mail'] = JSON.parse(ActiveSupport::JSON.encode(mail));
-            sendPushNotification()
+            response['mail'] = JSON.parse(ActiveSupport::JSON.encode(mail))
+            sendPushNotification(response)
         else
             response['status'] = 'ko'
             response['message'] = 'An error occured, please try again'

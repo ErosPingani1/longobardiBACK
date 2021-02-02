@@ -14,7 +14,7 @@ $registration_ids = ['fj0OMkIhTgSgayKFCORl0Q:APA91bFKezxVnxeR_8xo2s0aP52hSVjNl5F
 #ArduinoInfo class that contains information about the device that called the service
 #Every call to the service has to pass these params (date, time, battery)
 class ArduinoInfo
-    attr_accessor :date, :time, :battery, :location
+    attr_accessor :date, :time, :battery, :location, :device
 end
 
 def checkHashKey(hashkey, arduinoInfo)
@@ -46,6 +46,7 @@ class LongobardiBACK < Sinatra::Base
         arduinoInfo.time = params['time']
         arduinoInfo.battery = params['battery']
         arduinoInfo.location = params['location'] == 'fara' ? 'Fara Gera d\'Adda' : 'Location'
+        arduinoInfo.device = params['device'] == 'nodemcu' ? 'NodeMCU esp8266' : 'Device'
         if (checkHashKey(hashkey, arduinoInfo)) #The hashkey is checked to avoid data manipulation from unknown sources
             response['status'] = 'ok'
             response['message'] = 'New mail registered'

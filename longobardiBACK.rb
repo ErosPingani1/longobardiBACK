@@ -17,6 +17,14 @@ class ArduinoInfo
     attr_accessor :date, :time, :battery, :location, :device
 end
 
+def setArduinoInfo(arduinoInfo, params)
+    arduinoInfo.date = params['date']
+    arduinoInfo.time = params['time']
+    arduinoInfo.battery = params['battery']
+    arduinoInfo.location = params['location'] == 'fara' ? 'Fara Gera d\'Adda' : 'Location'
+    arduinoInfo.device = params['device'] == 'nodemcu' ? 'NodeMCU esp8266' : 'Device'
+end
+
 def checkHashKey(hashkey, arduinoInfo)
     return (Digest::SHA1.hexdigest KEY + arduinoInfo.date + arduinoInfo.time + arduinoInfo.battery).downcase == hashkey.downcase ? true : false
 end
@@ -42,17 +50,28 @@ class LongobardiBACK < Sinatra::Base
     post '/newMail' do
         response = {}
         hashkey = params['hashkey']
-        arduinoInfo.date = params['date']
-        arduinoInfo.time = params['time']
-        arduinoInfo.battery = params['battery']
-        arduinoInfo.location = params['location'] == 'fara' ? 'Fara Gera d\'Adda' : 'Location'
-        arduinoInfo.device = params['device'] == 'nodemcu' ? 'NodeMCU esp8266' : 'Device'
+        setArduinoInfo(arduinoInfo, params)
         if (checkHashKey(hashkey, arduinoInfo)) #The hashkey is checked to avoid data manipulation from unknown sources
             response['status'] = 'ok'
             response['message'] = 'New mail registered'
             response['arduinoInfo'] = JSON.parse(ActiveSupport::JSON.encode(arduinoInfo))
             response['notificationType'] = 1
             sendPushNotification(response)
+        else
+            response['status'] = 'ko'
+            response['message'] = 'An error occured, please try again'
+        end
+        content_type :json
+        response.to_json
+    end
+    #Automatically triggered by Arduino every minute to update device status
+    post '/setStatus' do
+        response = {}
+        hashkey = params['hashkey']
+        setArduinoInfo(arduinoInfo, params)
+        if(checkHashKey(hashkey, arduinoInfo))
+            response['status'] = 'ok'
+            response['message'] = 'Device info updated'
         else
             response['status'] = 'ko'
             response['message'] = 'An error occured, please try again'

@@ -44,7 +44,11 @@ def sendPushNotification(notificationData)
     puts('Service response: ', pushResponse)
 end
 
-class LongobardiBACK < Sinatra::Base
+class LongobardiBACK < Sinatra::Application
+    configure do
+        set :port, 9292
+        set :bind, '0.0.0.0'
+    end
     arduinoInfo = ArduinoInfo.new()
     #Called by ESP8266 when the sensor is triggered
     post '/newMail' do
@@ -79,4 +83,5 @@ class LongobardiBACK < Sinatra::Base
         content_type :json
         response.to_json
     end
+    run! if $0 == app_file
 end

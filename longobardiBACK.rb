@@ -25,16 +25,16 @@ def setArduinoInfo(arduinoInfo, params)
     arduinoInfo.device = params['device'] == 'nodemcu' ? 'NodeMCU esp8266' : 'Device'
 end
 
-def checkHashKey(hashkey, arduinoInfo)
-    return (Digest::SHA1.hexdigest KEY + arduinoInfo.date + arduinoInfo.time + arduinoInfo.battery).downcase == hashkey.downcase ? true : false
+def checkHashKey(hashkey, date, time, battery)
+    return (Digest::SHA1.hexdigest KEY + date + time + battery).downcase == hashkey.downcase ? true : false
 end
 
 def sendPushNotification(notificationData) 
     options = {
         "priority": "high",
         "notification": {
-            "title": "De pusc notifichescio",
-            "body": "Va che bella notifica che ti ho preso"
+            "title": "New mail",
+            "body": "There's something new in your mailbox, check it out!"
         },
         "data": {
             "content": notificationData
@@ -55,7 +55,7 @@ class LongobardiBACK < Sinatra::Application
         response = {}
         hashkey = params['hashkey']
         setArduinoInfo(arduinoInfo, params)
-        if (checkHashKey(hashkey, arduinoInfo)) #The hashkey is checked to avoid data manipulation from unknown sources
+        if (checkHashKey(hashkey, arduinoInfo.date, arduinoInfo.time, arduinoInfo.battery)) #The hashkey is checked to avoid data manipulation from unknown sources
             response['status'] = 'ok'
             response['message'] = 'New mail registered'
             response['arduinoInfo'] = JSON.parse(ActiveSupport::JSON.encode(arduinoInfo))
@@ -73,9 +73,25 @@ class LongobardiBACK < Sinatra::Application
         response = {}
         hashkey = params['hashkey']
         setArduinoInfo(arduinoInfo, params)
-        if(checkHashKey(hashkey, arduinoInfo))
+        if (checkHashKey(hashkey, arduinoInfo.date, arduinoInfo.time, arduinoInfo.battery))
             response['status'] = 'ok'
             response['message'] = 'Device info updated'
+        else
+            response['status'] = 'ko'
+            response['message'] = 'An error occured, please try again'
+        end
+        content_type :json
+        response.to_json
+    end
+    #Service called at app opening to get the current ESP8266 status to show on mailbox detail page
+    get '/getStatus' do
+        response = {}
+        hashkey = params['hashkey']
+        dTb = [params['date'], params['time'], params['battery']]
+        if (checkHashKey(hashkey, dTb[0], dTb[1], dTb[2]))
+            response['status'] = 'ok'
+            response['message'] = 'Device info correctly delivered to client'
+            response['arduinoInfo'] = JSON.parse(ActiveSupport::JSON.encode(arduinoInfo))
         else
             response['status'] = 'ko'
             response['message'] = 'An error occured, please try again'

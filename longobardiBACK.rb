@@ -50,6 +50,7 @@ class LongobardiBACK < Sinatra::Application
         set :bind, '0.0.0.0'
     end
     arduinoInfo = ArduinoInfo.new()
+    mailbox_recording = true
     #Called by ESP8266 when the sensor is triggered
     post '/newMail' do
         response = {}
@@ -91,7 +92,7 @@ class LongobardiBACK < Sinatra::Application
         if (checkHashKey(hashkey, dTb[0], dTb[1], dTb[2]))
             response['status'] = 'ok'
             response['message'] = 'Device info correctly delivered to client'
-            response['arduinoInfo'] = JSON.parse(ActiveSupport::JSON.encode(arduinoInfo))
+            response['mailboxStatus'] = { device: arduinoInfo.device, location: arduinoInfo.location, battery: arduinoInfo.battery, recording: mailbox_recording }
         else
             response['status'] = 'ko'
             response['message'] = 'An error occured, please try again'

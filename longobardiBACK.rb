@@ -25,8 +25,8 @@ def setArduinoInfo(arduinoInfo, params)
     arduinoInfo.device = params['device'] == 'nodemcu' ? 'NodeMCU esp8266' : 'Device'
 end
 
-def checkHashKey(hashkey, date, time, battery)
-    return (Digest::SHA1.hexdigest KEY + date + time + battery).downcase == hashkey.downcase ? true : false
+def checkHashKey(params)
+    return (Digest::SHA1.hexdigest KEY + params['date'] + params['time'] + params['battery']).downcase == params['hashkey'].downcase ? true : false
 end
 
 def sendPushNotification(notificationData) 
@@ -54,14 +54,16 @@ class LongobardiBACK < Sinatra::Application
     #Called by ESP8266 when the sensor is triggered
     post '/newMail' do
         response = {}
-        hashkey = params['hashkey']
         setArduinoInfo(arduinoInfo, params)
-        if (checkHashKey(hashkey, arduinoInfo.date, arduinoInfo.time, arduinoInfo.battery)) #The hashkey is checked to avoid data manipulation from unknown sources
+        if (mailbox_recording && checkHashKey(params)) #The hashkey is checked to avoid data manipulation from unknown sources
             response['status'] = 'ok'
             response['message'] = 'New mail registered'
             response['arduinoInfo'] = JSON.parse(ActiveSupport::JSON.encode(arduinoInfo))
             response['notificationType'] = 1
             sendPushNotification(response)
+        elsif (!mailbox_recording)
+            response['status'] = 'ok'
+            response['message'] = 'Device recording disabled, notification cannot be delivered'
         else
             response['status'] = 'ko'
             response['message'] = 'An error occured, please try again'
@@ -72,9 +74,8 @@ class LongobardiBACK < Sinatra::Application
     #Automatically triggered by Arduino every minute to update device status
     post '/setStatus' do
         response = {}
-        hashkey = params['hashkey']
         setArduinoInfo(arduinoInfo, params)
-        if (checkHashKey(hashkey, arduinoInfo.date, arduinoInfo.time, arduinoInfo.battery))
+        if (checkHashKey(params))
             response['status'] = 'ok'
             response['message'] = 'Device info updated'
         else
@@ -87,12 +88,24 @@ class LongobardiBACK < Sinatra::Application
     #Service called at app opening to get the current ESP8266 status to show on mailbox detail page
     get '/getStatus' do
         response = {}
-        hashkey = params['hashkey']
-        dTb = [params['date'], params['time'], params['battery']]
-        if (checkHashKey(hashkey, dTb[0], dTb[1], dTb[2]))
+        if (checkHashKey(params))
             response['status'] = 'ok'
             response['message'] = 'Device info correctly delivered to client'
             response['mailboxStatus'] = { device: arduinoInfo.device, location: arduinoInfo.location, battery: arduinoInfo.battery, recording: mailbox_recording }
+        else
+            response['status'] = 'ko'
+            response['message'] = 'An error occured, please try again'
+        end
+        content_type :json
+        response.to_json
+    end
+    post '/setMailboxRecording' do
+        response = {}
+        if (checkHashKey(params))
+            mailbox_recording = !mailbox_recording
+            response['status'] = 'ok'
+            response['message'] = 'Mailbox recording successfully stopped'
+            response['recording'] = mailbox_recording
         else
             response['status'] = 'ko'
             response['message'] = 'An error occured, please try again'

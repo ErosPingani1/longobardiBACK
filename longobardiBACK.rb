@@ -25,10 +25,12 @@ def setArduinoInfo(arduinoInfo, params)
     arduinoInfo.device = params['device'] == 'nodemcu' ? 'NodeMCU esp8266' : 'Device'
 end
 
+#Method that checks the received hashkey to validate the request
 def checkHashKey(params)
     return (Digest::SHA1.hexdigest KEY + params['date'] + params['time'] + params['battery']).downcase == params['hashkey'].downcase ? true : false
 end
 
+#Push notification management through fcm (Firebase Cloud Messaging)
 def sendPushNotification(notificationData) 
     options = {
         "priority": "high",
@@ -99,6 +101,7 @@ class LongobardiBACK < Sinatra::Application
         content_type :json
         response.to_json
     end
+    #Service that sets a new value for mailbox_recording, in order to stop notification spreading when required
     post '/setMailboxRecording' do
         response = {}
         if (checkHashKey(params))
